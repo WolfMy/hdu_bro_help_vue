@@ -30,7 +30,8 @@
             <CellGroup>
                 <Cell v-for="(bro, index) in data" :title="bro.name+' ('+bro.studentnum+')'" :label="bro.token" :key="bro.token">
                     <Icon type="ios-contact" slot="icon" />
-                    <Button slot="extra" type="error" size="small" @click="deleteAccount(index)">Delete</Button>
+                    <Icon type="ios-close-circle" slot="extra" @click="deleteAccount(index)" />
+                    <!--Button slot="extra" type="error" size="small" @click="deleteAccount(index)">Delete</Button-->
                 </Cell>
             </CellGroup>
             </Card>
