@@ -6,6 +6,8 @@ import router from './router'
 import store from './store'
 
 Vue.config.productionTip = false
+Vue.prototype.$api_baseUrl = 'http://120.27.192.52:8080/';
+//Vue.prototype.$api_baseUrl = 'http://127.0.0.1:5000/';
 new Vue({
   router,
   store,

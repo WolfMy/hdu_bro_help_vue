@@ -12,19 +12,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 cors = CORS(app, supports_credentials=True)
 db = SQLAlchemy(app)
 
-# 接口使用情况
-IterfaceUsed = 75
-@app.route('/getIterfaceUsed')
-def getIterfaceUsed():
-    global IterfaceUsed
-    return str(IterfaceUsed)
+class OCR(db.Model):
+    OCRName = db.Column(db.String(10), primary_key=True)
+    OCRUsed = db.Column(db.Integer, nullable=False)
 
-@app.route('/Iterface_Use')
-def Iterface_Use():
-    global IterfaceUsed
-    IterfaceUsed += 1
-    return 'Iterface_Use success'
-
+    def getOCRUsed(self):
+        return self.OCRUsed
+    
+    def useOCR(self, times):
+        self.OCRUsed += times
 
 class Student(db.Model):
     StudentNum = db.Column(db.String(8), primary_key=True)
@@ -91,8 +87,19 @@ def getAccounts():
         a['name'] = student.StudentName
         a['studentnum'] = student.StudentNum
         a['token'] = student.StudentToken
+        a['_disabled'] = not(Hdu_Bro_Request(a['token']).check_token_status())
         Accounts.append(a)
     return json.dumps(Accounts)
+
+@app.route('/checkTokenStatus')
+def checkTokenStatus():
+    students = Student.query.order_by(Student.StudentNum).all()
+    status = []
+    for student in students:
+        token = student.StudentToken
+        bro = Hdu_Bro_Request(token)
+        status.append(bro.check_token_status())
+    return jsonify(status)
 
 @app.route('/signin', methods=['POST'])
 def signin():
@@ -103,33 +110,52 @@ def signin():
     for token in tokens:
         student = Student.query.filter_by(StudentToken=token).first()
         bro = Hdu_Bro_Request(token)
-        bro.code_check_in(checkCode)
-        while True:
-            img_stream = bro.create_code_img()
-            valid_code = crack_code(img_stream)
-            #print(valid_code)
-            valid_state = bro.valid_code(valid_code)
-            if valid_state == 200:
-                res.append({
-                    'type': 'success',
-                    'content': student.StudentName+'，签到成功!'
-                })
-                break
-            elif valid_state == 400:
-                continue
-            elif valid_state == 401:
-                res.append({
-                    'type': 'warning',
-                    'content': student.StudentName+'，签到码无效!'
-                })
-                break
-            else:
-                res.append({
-                    'type': 'warning',
-                    'content': valid_state
-                })
-                break
+        status_code = bro.code_check_in(checkCode)
+        if status_code == 200:
+            # 表示token有效
+            while True:
+                img_stream = bro.create_code_img()
+                valid_code = crack_code(img_stream)
+                #print(valid_code)
+                valid_state = bro.valid_code(valid_code)
+                if valid_state == 200:
+                    res.append({
+                        'type': 'success',
+                        'content': student.StudentName+'，签到成功!'
+                    })
+                    break
+                elif valid_state == 400:
+                    continue
+                elif valid_state == 401:
+                    res.append({
+                        'type': 'warning',
+                        'content': student.StudentName+'，签到码无效!'
+                    })
+                    break
+                else:
+                    res.append({
+                        'type': 'warning',
+                        'content': valid_state
+                    })
+                    break
+        else:
+            res.append({
+                'type': 'error',
+                'content': student.StudentName+'，token过期!'
+            })
     return json.dumps(res)
+
+@app.route('/getOCRUsed')
+def getIterfaceUsed():
+    ocr = OCR.query.filter_by(OCRName='3023data').first()
+    return str(ocr.getOCRUsed())
+
+@app.route('/useOCR')
+def Iterface_Use():
+    ocr = OCR.query.filter_by(OCRName='3023data').first()
+    ocr.useOCR(1)
+    db.session.commit()
+    return 'Iterface_Use success'
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1',port=5000)

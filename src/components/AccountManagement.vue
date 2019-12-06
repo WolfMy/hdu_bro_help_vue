@@ -29,8 +29,9 @@
             <Card title="Bros" icon="ios-contacts" :padding="0" shadow>
             <CellGroup>
                 <Cell v-for="(bro, index) in data" :title="bro.name+' ('+bro.studentnum+')'" :label="bro.token" :key="bro.token">
-                    <Icon type="ios-contact" slot="icon" />
-                    <Icon type="ios-close-circle" slot="extra" @click="deleteAccount(index)" />
+                    <Icon v-if="!status[index]" type="ios-contact" size="20" slot="icon" />
+                    <Icon v-if="status[index]" type="ios-alert-outline" color="red" size="20" slot="icon" />
+                    <Icon type="ios-close-circle" size="16" slot="extra" @click="deleteAccount(index)" />
                     <!--Button slot="extra" type="error" size="small" @click="deleteAccount(index)">Delete</Button-->
                 </Cell>
             </CellGroup>
@@ -42,20 +43,19 @@
 
 <script>
     import Axios from 'axios';
-    const api_baseUrl = 'http://120.27.192.52:8080/';
-    //const api_baseUrl = 'http://127.0.0.1:5000/';
     export default {
         data () {
             return {
                 studentnum: '',
                 password: '',
                 loading: false,
-                data: []
+                data: [],
+                status: [],
             }
         },
         methods: {
             getAccounts() {
-                var api = api_baseUrl + 'getAccounts'
+                var api = this.$api_baseUrl + 'getAccounts'
                 Axios.get(api).then((res)=>{
                     this.data = res.data;
                     //console.log(res.data);
@@ -63,9 +63,21 @@
                     console.log(error);
                 })
             },
+            checkTokenStatus() {
+                var api = this.$api_baseUrl + 'checkTokenStatus'
+                Axios.get(api).then((res)=>{
+                    for(var index in res.data){
+                        res.data[index] = !res.data[index]
+                    }
+                    this.status = res.data;
+                    //console.log(res.data);
+                }).catch((error)=>{
+                    console.log(error);
+                })
+            },
             hdu_login() {
                 this.loading = true;
-                var api = api_baseUrl + 'hdu_login'
+                var api = this.$api_baseUrl + 'hdu_login'
                 var data = {'studentnum':this.studentnum, 'password':this.password};
                 Axios.post(api, data).then((res)=>{
                     console.log(res.data);
@@ -84,7 +96,7 @@
                 
             },
             deleteAccount(index) {
-                var api = api_baseUrl + 'deleteAccount'
+                var api = this.$api_baseUrl + 'deleteAccount'
                 var data = {'studentnum':this.data[index].studentnum}
                 Axios.post(api, data).then((res)=>{
                     console.log(res.data);
@@ -97,6 +109,7 @@
         },
         mounted() {
             this.getAccounts();
+            this.checkTokenStatus();
         }
     }
 </script>

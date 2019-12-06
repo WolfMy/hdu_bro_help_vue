@@ -7,24 +7,24 @@ import execjs
 import re
 
 def crack_code(img_stream):
-    '''通过API自动识别验证码'''
-    appcode = 'b50ca5defc40421ba05f24e2c13b94d7'  # 过期后需要更换
-    api = 'http://codevirify.market.alicloudapi.com/icredit_ai_image/verify_code/v1'
+    '''通过3023data API自动识别验证码'''
+    appcode = 'da3f14ee5cc50146f002175da135216e'
+    api = 'http://api.3023data.com/ocr/captcha'
     data = {
-        'IMAGE': img_stream,
-        'IMAGE_TYPE': 0
+        'type': 1003,
+        'image': img_stream
     }
     api_header = {
-        'Authorization': 'APPCODE '+appcode,
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'key': appcode,
+        #'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     }
     r = requests.post(api,data, headers=api_header)
-    auto_crack_code = json.loads(r.text).get('VERIFY_CODE_ENTITY').get('VERIFY_CODE')
+    auto_crack_code = json.loads(r.text).get('data').get('captcha')
     return auto_crack_code
-
+    
 def crack_code_baidu(img_stream):
     access_token = '24.e93d7918167521a4bfd9dbae8bc8d299.2592000.1577504016.282335-17872543'
-    api = 'https://aip.baidubce.com/rest/2.0/ocr/v1/numbers'
+    api = 'https://aip.baidubce.com/rest/2.0/ocr/v1/general_basi'
     kw = {'access_token':access_token}
     data = {'image': img_stream,}
     api_header = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -88,6 +88,18 @@ class Hdu_Bro_Request():
         r = requests.get(url, headers=self.headers)
         userinfo = r.json()
         return userinfo
+    
+    def check_token_status(self, ):
+        '''检查token状态
+        Return status  True:可用 False:不可用
+        '''
+        userinfo = self.get_user_info()
+        try:
+            id = userinfo['id']
+            return True
+        except:
+            url = userinfo['url']
+            return False
 
     def get_course(self, startTime):
         url = 'https://skl.hdu.edu.cn/api/course?startTime='
@@ -126,4 +138,9 @@ class Hdu_Bro_Request():
         kw = {'code':code}
         r = requests.get(url, params=kw, headers=self.headers)
         return r.status_code
-    
+
+if __name__ == "__main__":
+    token = 'c4b7ccb2-6e4e-45dd-a65c-09d17c0ff88d'
+    bro = Hdu_Bro_Request(token)
+    userinfo = bro.get_user_info()
+    print(userinfo)
