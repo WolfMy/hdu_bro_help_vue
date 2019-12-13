@@ -31,21 +31,23 @@ def crack_code_baidu(img_stream):
     r = requests.post(api, data, params=kw, headers=api_header)
     return r.json()
     
-def login(u,p):
+def login(u, p):
+    '''模拟登陆数字杭电获取token
+    Return token
+    '''
     url = 'https://cas.hdu.edu.cn/cas/login'
     kw = {'state':'', 'service': 'https://skl.hdu.edu.cn/api/cas/login?index='}
     headers = {
         'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
     }
-    r1 = requests.get(url, params=kw, headers=headers)
-    lt = re.findall(r'\w{2}-\d{6}-\w{30}-\w{3}', r1.text)[0]
-    execution = re.findall(r'e\d+s\d+', r1.text)[0]
+    s = requests.session()
+    r = s.get(url, params=kw, headers=headers)
+    lt = re.findall(r'\w{2}-\d{6}-\w{30}-\w{3}', r.text)[0]
+    execution = re.findall(r'e\d+s\d+', r.text)[0]
     # 调用des.js进行rsa加密
-    js_str = ''
-    with open('./static/des.js', 'r') as f:
-        for line in f.readlines():
-            js_str += line
-    ctx = execjs.compile(js_str)
+    with open('./des.js') as f:
+        jsdata = f.read()
+        ctx = execjs.compile(jsdata)
     rsa = ctx.call('strEnc', u+p+lt,'1','2','3')
     ul = len(u)
     pl = len(p)
@@ -57,11 +59,9 @@ def login(u,p):
         'execution': execution,
         '_eventId': 'submit'
     }
-    r2 = requests.post('https://cas.hdu.edu.cn/cas/login?state=&service=https%3A%2F%2Fskl.hdu.edu.cn%2Fapi%2Fcas%2Flogin%3Findex%3D',post_data)
-    print(r2.request.headers)
-    print(r2.request.body)
-    print(r2.headers)
-    print(r2.status_code)
+    r = s.post(url, post_data, params=kw, headers=headers)
+    token = r.url[-36:]
+    return token
 
 class Hdu_Bro_Request():
     def __init__(self, token):
@@ -138,9 +138,3 @@ class Hdu_Bro_Request():
         kw = {'code':code}
         r = requests.get(url, params=kw, headers=self.headers)
         return r.status_code
-
-if __name__ == "__main__":
-    token = 'c4b7ccb2-6e4e-45dd-a65c-09d17c0ff88d'
-    bro = Hdu_Bro_Request(token)
-    userinfo = bro.get_user_info()
-    print(userinfo)

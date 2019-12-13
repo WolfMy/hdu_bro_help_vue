@@ -1,9 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from Hdu_Bro_Driver import Hdu_Bro_Driver
-from Hdu_Bro_Request import Hdu_Bro_Request, crack_code
-import json, os, time
+from Hdu_Bro_Request import Hdu_Bro_Request, crack_code, login
+import json, os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'you-will-never-guess!'
@@ -42,6 +41,7 @@ class Student(db.Model):
 def hello_world():
     return 'Hello World!'
 
+'''旧版采用selenium登陆方式
 @app.route('/hdu_login', methods=['POST'])
 def hdu_login():
     data = request.get_json()
@@ -68,6 +68,24 @@ def hdu_login():
         student = Student(user_info[1], token, user_info[0], user_info[2], user_info[3], user_info[4])
         db.session.add(student)
         db.session.commit()
+    return 'hdu_login success!'
+'''
+@app.route('/hdu_login', methods=['POST'])
+def hdu_login():
+    # 新版采用requests模拟登陆获取token方式
+    data = request.get_json()
+    student_num = data['studentnum']
+    passwd = data['password']
+    if not Student.query.filter_by(StudentNum=student_num).all():
+        token = login(student_num, passwd)
+        bro = Hdu_Bro_Request(token)
+        user_info = bro.get_user_info()
+        try:
+            student = Student(user_info['id'], token, user_info['userName'], user_info['unitName'], user_info['major'], user_info['classNo'])
+            db.session.add(student)
+            db.session.commit()
+        except:
+            return 'failed!'
     return 'hdu_login success!'
 
 @app.route('/deleteAccount', methods=['POST'])

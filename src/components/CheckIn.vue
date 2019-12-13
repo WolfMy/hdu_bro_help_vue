@@ -7,6 +7,22 @@
     <Table border ref="selection" :columns="columns" :data="data" @on-selection-change="updateSelection($event)"></Table>
     <br>
     <Input type="text" maxlength="4" v-model="checkCode" placeholder="请输入签到码..."/>
+    <!-- vant组件
+    <van-password-input
+    :value="checkCode"
+    :length="4"
+    :gutter="0"
+    :mask="false"
+    :focused="showKeyboard"
+    @focus="showKeyboard = true"
+    />
+    <van-number-keyboard
+    :show="showKeyboard"
+    @input="onInput"
+    @delete="onDelete"
+    @blur="showKeyboard = false"
+    />
+    -->
     <br><br>
     <Button type="primary" :loading="loading" @click="signin" long>
         <span v-if="!loading">一键签到</span>
@@ -19,6 +35,7 @@ import Axios from 'axios';
 export default {
     data() {
         return {
+            //showKeyboard: false,
             OCRUsed: 0,
             checkCode: '',
             loading: false,
@@ -42,6 +59,14 @@ export default {
         }
     },
     methods:{
+        /*
+        onInput(key) {
+            this.checkCode = (this.checkCode + key).slice(0, 4);
+        },
+        onDelete() {
+            this.checkCode = this.checkCode.slice(0, this.checkCode.length - 1);
+        },
+        */
         toLoading () {
             this.loading = true;
         },
